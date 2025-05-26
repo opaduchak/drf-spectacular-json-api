@@ -106,6 +106,18 @@ class JsonApiRelationshipObject:
 
         self._schema = build_json_api_data_frame(self._schema)
 
+        self._schema['properties']['links'] = {
+            'type': 'object',
+            'properties': {
+                'self' : {
+                    'type': 'string',
+                    'nullable': True,
+                    'format': 'uri',
+                    'example': f'http://api.example.org/accounts/123'
+                }
+            }
+        }
+
         self.patch_root_metadata()
 
     def __dict__(self):
@@ -131,11 +143,16 @@ class JsonApiResourceObject:
                     "type": "string",
                     "description": _("The [type](https://jsonapi.org/format/#document-resource-object-identification) member is used to describe resource objects that share common attributes and relationships."),
                 },
-                # TODO:
-                # "links": {
-                #     "type": "object",
-                #     "properties": {"self": {"$ref": "#/components/schemas/link"}},
-                # },
+                "links": {
+                    "type": "object",
+                    "properties": {
+                        "self": {
+                                    'type': 'string',
+                                    'format': 'uri',
+                                    'nullable': False,
+                                    'example': f'http://api.example.org/accounts/123'
+                        },},
+                },
             },
         }
         self.pk_name = get_primary_key_of_serializer(

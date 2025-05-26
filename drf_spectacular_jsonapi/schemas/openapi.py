@@ -287,7 +287,7 @@ class JsonApiAutoSchema(AutoSchema):
         response = super()._get_response_for_code(
             serializer, status_code, media_types, direction)
         content = response.get("content")
-        if content and "application/vnd.api+json" in content and "Paginated" not in content["application/vnd.api+json"]["schema"]["$ref"]:
+        if content and "application/vnd.api+json" in content and "Paginated" not in content["application/vnd.api+json"]["schema"].get("$ref", content["application/vnd.api+json"]["schema"].get('items', {}).get('ref', {}) ):
             response_component = ResolvedComponent(
                 name=self._get_serializer_name(
                     serializer=serializer, direction=direction)+"Response",
