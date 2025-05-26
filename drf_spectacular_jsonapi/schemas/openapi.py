@@ -269,6 +269,7 @@ class JsonApiAutoSchema(AutoSchema):
             serializer=serializer,
             drf_spectactular_schema=object_schema,
             method=self.method,
+            direction=direction
         ).__dict__()
         return json_api_resource_object_schema
 

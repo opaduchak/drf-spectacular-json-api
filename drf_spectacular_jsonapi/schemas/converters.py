@@ -17,9 +17,10 @@ from drf_spectacular_jsonapi.schemas.utils import get_primary_key_of_serializer
 class JsonApiRelationshipObject:
     """Converter class to convert drf_spectacular schema of related fields as json:api specific related field schema"""
 
-    def __init__(self, field: Field, drf_spectactular_field_schema: Dict) -> None:
+    def __init__(self, field: Field, drf_spectactular_field_schema: Dict, direction: str) -> None:
         self.field = field
         self.drf_spectacular_field_schema = drf_spectactular_field_schema
+        self.direction=direction
         self.related_resource_type = get_related_resource_type(self.field)
         self._schema = {
             "type": "object",
@@ -105,18 +106,18 @@ class JsonApiRelationshipObject:
             }
 
         self._schema = build_json_api_data_frame(self._schema)
-
-        self._schema['properties']['links'] = {
-            'type': 'object',
-            'properties': {
-                'self' : {
-                    'type': 'string',
-                    'nullable': True,
-                    'format': 'uri',
-                    'example': f'http://api.example.org/accounts/123'
+        if self.direction == 'response':
+            self._schema['properties']['links'] = {
+                'type': 'object',
+                'properties': {
+                    'related' : {
+                        'type': 'string',
+                        'nullable': True,
+                        'format': 'uri',
+                        'example': f'http://api.example.org/accounts/123'
+                    }
                 }
             }
-        }
 
         self.patch_root_metadata()
 
@@ -129,10 +130,11 @@ class JsonApiResourceObject:
 
     related_field_converter_class = JsonApiRelationshipObject
 
-    def __init__(self, serializer: ModelSerializer, drf_spectactular_schema: Dict, method: str) -> None:
+    def __init__(self, serializer: ModelSerializer, drf_spectactular_schema: Dict, method: str, direction: str) -> None:
         self.serializer = serializer
         self.drf_spectacular_schema = drf_spectactular_schema
         self.method = method
+        self.direction = direction
 
         self._schema = {
             "type": "object",
@@ -143,7 +145,10 @@ class JsonApiResourceObject:
                     "type": "string",
                     "description": _("The [type](https://jsonapi.org/format/#document-resource-object-identification) member is used to describe resource objects that share common attributes and relationships."),
                 },
-                "links": {
+            },
+        }
+        if self.direction == 'response':
+            self._schema['properties']['links'] ={
                     "type": "object",
                     "properties": {
                         "self": {
@@ -152,9 +157,7 @@ class JsonApiResourceObject:
                                     'nullable': False,
                                     'example': f'http://api.example.org/accounts/123'
                         },},
-                },
-            },
-        }
+                }
         self.pk_name = get_primary_key_of_serializer(
             serializer=self.serializer)
 
@@ -216,7 +219,7 @@ class JsonApiResourceObject:
 
             if isinstance(field, RelatedField) or isinstance(field, ManyRelatedField):
                 relationships[format_field_name(
-                    field.field_name)] = self.get_related_field_converter_class()(field=field, drf_spectactular_field_schema=self.drf_spectacular_schema["properties"][field.field_name]).__dict__()
+                    field.field_name)] = self.get_related_field_converter_class()(field=field, drf_spectactular_field_schema=self.drf_spectacular_schema["properties"][field.field_name], direction=self.direction).__dict__()
                 if field.required:
                     required_relationships.append(
                         format_field_name(field.field_name))
